@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | 牌型 | `internal/hand` | 这 7 张牌的胜负对不对？ | `go test ./internal/hand -v` |
 | 规则 | `internal/game` | 谁该行动、底池、街是否推进？ | `go test ./internal/game -v` + 看 `table.Log` |
-| 对局入口 | `cmd/pokershow` | 人机/机器人能否把一手打完？ | `go run ./cmd/pokershow -seed N` |
+| 对局入口 | `cmd/pokershow` | 人机/机器人能否把一手打完？ | `go run ./cmd/pokershow gui` 或 `cli -seed N` |
 
 不要一上来调 Bot。牌型错了，后面全是噪音。
 

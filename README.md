@@ -25,16 +25,19 @@
 
 ```bash
 go test ./...
-go run ./cmd/pokershow -seed 42
+go run ./cmd/pokershow gui
+```
+
+浏览器打开提示的地址（默认 `http://127.0.0.1:8788`）：改 Seed / 盲注，点弃牌、跟注、加注，看日志复现一手牌。
+
+终端 CLI 仍可用：
+
+```bash
+go run ./cmd/pokershow cli -seed 42
+go run ./cmd/pokershow cli -auto -seed 7 -hands 3
 ```
 
 人机命令：`f` 弃牌 · `c` 过牌/跟注 · `r [raise-to]` 加注 · `a` 全下 · `q` 退出
-
-机器人互打（无交互）：
-
-```bash
-go run ./cmd/pokershow -auto -seed 7 -hands 3
-```
 
 ## 目录
 
@@ -44,7 +47,8 @@ go run ./cmd/pokershow -auto -seed 7 -hands 3
 | `internal/hand` | 5–7 张最佳牌型比较 |
 | `internal/game` | 德州桌：街、行动、摊牌 |
 | `internal/bot` | 可替换对手（当前 Random） |
-| `cmd/pokershow` | 终端对局 / 复现入口 |
+| `cmd/pokershow` | `gui` / `cli` 入口 |
+| `internal/webui` | 本机 Web GUI（牌桌按钮 + 日志） |
 | `docs/DEBUG.md` | 复现、查层、常见坑 |
 
 ## 验收标准（当前骨架）
@@ -53,6 +57,7 @@ go run ./cmd/pokershow -auto -seed 7 -hands 3
 - [x] 弃牌收池、过牌到摊牌、筹码守恒
 - [x] 同一 `-seed` 开局手牌可复现
 - [x] CLI 能打完一手并打印行动日志
+- [x] Web GUI：新开局 / 行动按钮 / 下一手 / 种子可改
 
 ## 刻意没做（避免一上来铺开）
 

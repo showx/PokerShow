@@ -11,16 +11,56 @@ import (
 	"github.com/showx/PokerShow/internal/bot"
 	"github.com/showx/PokerShow/internal/card"
 	"github.com/showx/PokerShow/internal/game"
+	"github.com/showx/PokerShow/internal/webui"
 )
 
 func main() {
-	seed := flag.Int64("seed", 42, "RNG seed for reproducible hands")
-	stack := flag.Int("stack", 1000, "starting stack")
-	sb := flag.Int("sb", 5, "small blind")
-	bb := flag.Int("bb", 10, "big blind")
-	hands := flag.Int("hands", 1, "number of hands to play")
-	auto := flag.Bool("auto", false, "bot vs bot (no human input)")
-	flag.Parse()
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "gui":
+			runGUI(os.Args[2:])
+			return
+		case "cli":
+			runCLI(os.Args[2:])
+			return
+		case "help", "-h", "--help":
+			printUsage()
+			return
+		}
+	}
+	// Default: CLI for backward compatibility with existing flags.
+	runCLI(os.Args[1:])
+}
+
+func printUsage() {
+	fmt.Fprintf(os.Stderr, `PokerShow — 本地德州调试沙盒
+
+  pokershow gui [-addr 127.0.0.1:8788]
+  pokershow cli [-seed 42] [-stack 1000] [-sb 5] [-bb 10] [-hands 1] [-auto]
+  pokershow          # 等同 cli
+
+`)
+}
+
+func runGUI(args []string) {
+	fs := flag.NewFlagSet("gui", flag.ExitOnError)
+	addr := fs.String("addr", "127.0.0.1:8788", "listen address")
+	_ = fs.Parse(args)
+	srv := webui.NewServer(*addr)
+	if err := srv.ListenAndServe(); err != nil {
+		fail(err)
+	}
+}
+
+func runCLI(args []string) {
+	fs := flag.NewFlagSet("cli", flag.ExitOnError)
+	seed := fs.Int64("seed", 42, "RNG seed for reproducible hands")
+	stack := fs.Int("stack", 1000, "starting stack")
+	sb := fs.Int("sb", 5, "small blind")
+	bb := fs.Int("bb", 10, "big blind")
+	hands := fs.Int("hands", 1, "number of hands to play")
+	auto := fs.Bool("auto", false, "bot vs bot (no human input)")
+	_ = fs.Parse(args)
 
 	names := []string{"你", "Bot"}
 	stacks := []int{*stack, *stack}
@@ -42,12 +82,13 @@ func main() {
 
 	fmt.Printf("PokerShow 调试局 seed=%d blinds=%d/%d stack=%d\n", *seed, *sb, *bb, *stack)
 	fmt.Println("命令: f弃牌 c过牌/跟注 r加注 a全下 q退出  h帮助")
+	fmt.Println("图形界面: go run ./cmd/pokershow gui")
 
 	for h := 0; h < *hands; h++ {
 		if err := table.StartHand(); err != nil {
 			fail(err)
 		}
-		printState(table, true)
+		printState(table)
 		for !table.Snapshot(false).Finished {
 			if !table.NeedAction() {
 				break
@@ -76,7 +117,7 @@ func main() {
 				fmt.Println("动作失败:", err)
 				continue
 			}
-			printState(table, true)
+			printState(table)
 		}
 		fmt.Println("--- 本手日志 ---")
 		for _, line := range table.Log {
@@ -89,7 +130,7 @@ func main() {
 	}
 }
 
-func printState(t *game.Table, showHumanHole bool) {
+func printState(t *game.Table) {
 	s := t.Snapshot(false)
 	fmt.Printf("\n[手牌 #%d | %s | 底池 %d | 当前注 %d]\n", s.HandNo, s.Street, s.Pot, t.CurrentBet())
 	if len(s.Board) > 0 {
@@ -101,7 +142,7 @@ func printState(t *game.Table, showHumanHole bool) {
 			mark = ">"
 		}
 		hole := ""
-		if showHumanHole && p.Human && len(p.Hole) > 0 {
+		if p.Human && len(p.Hole) > 0 {
 			hole = " 手牌=" + card.Format(p.Hole)
 		}
 		if s.Finished && len(p.Hole) > 0 {
